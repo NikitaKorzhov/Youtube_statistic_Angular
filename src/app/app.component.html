@@ -1,0 +1,60 @@
+<style>
+  ::ng-deep .mat-mdc-card-header-text{
+    width: 100% !important;
+  }
+</style>
+<div style="width: 100%;height: 100%;position: absolute;z-index: 1000 ;background-color: white;" [style.display]="isLoading?'block':'none'">
+  <h1>зачекайте будь ласка Йде обробка данних</h1>
+</div>
+
+<button mat-flat-button color="danger" style="background-color: red;color: white;" (click)="checkSignInStatus()">Sig in</button>
+<button mat-flat-button color="primary" (click)="getList()">load</button>
+<div>
+  <div *ngFor="let chenel of chanels">
+
+
+
+
+
+    <mat-card appearance="outlined" style="margin: 20px;padding: 20px;">
+      <mat-card-header>
+        <!-- <mat-card-title>Poodle</mat-card-title> -->
+        <mat-card-subtitle>
+    <div >
+      <div style="display: inline-block;">
+        <div style="border-radius: 50%;width: 100px;height: 100px; "  [style.backgroundImage]="'url(' + chenel.picture + ')'"
+        [style.backgroundSize]="'cover'"
+        [style.backgroundPosition]="'center'"></div>
+      </div>
+      <div style="display: inline-block;vertical-align: top;margin-left: 25px;">
+        <a [href]="chenel.url" style="font-size: 25px;line-height: 60px;">{{chenel.chanal}} - {{chenel.count}}</a>
+        <p>{{chenel.subscribers}} -підписників</p>
+      </div>
+    </div>
+    <div style="width: 100%;">{{chenel.description}}</div>
+    <mat-progress-bar mode="determinate" [value]="chenel.persent"></mat-progress-bar>
+    <mat-expansion-panel hideToggle>
+      <mat-expansion-panel-header>
+        <mat-panel-title> Список відео </mat-panel-title>
+        <!-- <mat-panel-description> This is a summary of the content </mat-panel-description> -->
+      </mat-expansion-panel-header>
+      <div style="margin-left: 25px;">
+        <p *ngFor="let video of chenel.videos">
+          <a href="https://www.youtube.com/watch?v=${$value.id}">{{video.title}}</a>
+        </p>
+      </div>
+    </mat-expansion-panel>
+
+
+
+
+
+
+  </mat-card-subtitle>
+</mat-card-header>
+
+</mat-card>    
+  </div>
+
+</div>
+

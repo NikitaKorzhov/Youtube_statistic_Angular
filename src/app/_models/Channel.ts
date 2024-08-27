@@ -7,5 +7,10 @@ export class Channel{
     picture:string=""
     subscribers:string=""
     url:string=""
-    videos:Array<{title:string}>=[]
+    videos:Array<Video>=[]
+    opened:boolean=false
+}
+export class Video{
+    id:string=""
+    title:string=""
 }

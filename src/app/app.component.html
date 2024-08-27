@@ -7,8 +7,9 @@
   <h1>зачекайте будь ласка Йде обробка данних</h1>
 </div>
 
-<button mat-flat-button color="danger" style="background-color: red;color: white;" (click)="checkSignInStatus()">Sig in</button>
-<button mat-flat-button color="primary" (click)="getList()">load</button>
+<button mat-flat-button color="danger" *ngIf="!isSignedInFlag" style="background-color: red;color: white;" (click)="checkSignInStatus()">Sig in</button>
+<button mat-flat-button color="primary" *ngIf="isSignedInFlag&&chanels.length==0" (click)="getList()">load videos you loked</button>
+<button mat-flat-button color="primary" *ngIf="isSignedInFlag&&chanels.length>0" (click)="goBack()">reload</button>
 <div>
   <div *ngFor="let chenel of chanels">
 
@@ -33,14 +34,14 @@
     </div>
     <div style="width: 100%;">{{chenel.description}}</div>
     <mat-progress-bar mode="determinate" [value]="chenel.persent"></mat-progress-bar>
-    <mat-expansion-panel hideToggle>
+    <mat-expansion-panel (opened)="change()" (closed)="change()">
       <mat-expansion-panel-header>
         <mat-panel-title> Список відео </mat-panel-title>
         <!-- <mat-panel-description> This is a summary of the content </mat-panel-description> -->
       </mat-expansion-panel-header>
       <div style="margin-left: 25px;">
         <p *ngFor="let video of chenel.videos">
-          <a href="https://www.youtube.com/watch?v=${$value.id}">{{video.title}}</a>
+          <a [href]="'https://www.youtube.com/watch?v='+video.id">{{video.title}}</a>
         </p>
       </div>
     </mat-expansion-panel>

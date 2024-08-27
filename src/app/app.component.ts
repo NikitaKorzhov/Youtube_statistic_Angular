@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { loadGapiInsideDOM, gapi } from 'gapi-script';
 import { Channel } from './_models/Channel';
@@ -16,18 +16,25 @@ import {MatCardModule} from '@angular/material/card';
   styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit  {
+  title = 'YoutubeStat';
+  isSignedInFlag:boolean=false
 public chanels:Array<Channel>=[]
   private client_id = "25550250520-0u7kdg6ru508ntljvr2tk5smk1cqd0nm.apps.googleusercontent.com";
   private api_key = "AIzaSyCVjmtpRuWyqMUFy6S6QCrNVOluyM70Na8";
   private scope="https://www.googleapis.com/auth/youtube.readonly"
   private docs="https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"
 
-
+constructor(private cd: ChangeDetectorRef,private ngZone: NgZone){}
   public isLoading:boolean=false
   ngOnInit(): void {
     this.initializeGoogleApi()
+    this.ngZone.run(() => {
+      this.cd.detectChanges();
+  });
   }
-  title = 'YoutubeStat';
+  public change(){
+    this.cd.detectChanges();
+  }
 
 
 
@@ -37,6 +44,7 @@ public chanels:Array<Channel>=[]
 
 
   initializeGoogleApi(): void {
+    this.isLoading=true
     loadGapiInsideDOM().then(() => {
       gapi.load('client:auth2', () => {
         gapi.client.init({
@@ -46,28 +54,43 @@ public chanels:Array<Channel>=[]
           scope: this.scope
         }).then(() => {
           console.log('Google API initialized');
+          this.isSignedInFlag=this.isSignedIn();
+          this.isLoading=false
+          this.cd.detectChanges(); 
           // Тут можна викликати інші методи API, наприклад:
           // this.checkSignInStatus();
         }).catch((error: any) => {
           console.error('Error initializing Google API', error);
+          this.isLoading=false
+          this.cd.detectChanges(); 
         });
       });
     });
   }
 
+public isSignedIn(){
+  if (gapi.auth2!=undefined){
+  const authInstance = gapi.auth2.getAuthInstance();
 
-
+  return authInstance.isSignedIn.get()
+  }else{
+    return false
+  }
+}
 
   checkSignInStatus(): void {
     const authInstance = gapi.auth2.getAuthInstance();
     if (authInstance.isSignedIn.get()) {
-      console.log('User is signed in');
+      console.log('User is signed in!!!');
+      this.isSignedInFlag=this.isSignedIn()
+      this.cd.detectChanges();
       // Можете продовжити з авторизованим користувачем
     } else {
       console.log('User is not signed in');
       authInstance.signIn({ prompt: 'consent' }).then(() => {
         console.log('User signed in');
-     
+        this.isSignedInFlag=this.isSignedIn()
+        this.cd.detectChanges();
         // Можете продовжити з авторизованим користувачем
       }).catch((error: any) => {
         console.error('Error signing in', error);
@@ -85,6 +108,7 @@ public chanels:Array<Channel>=[]
 
 public async getList(){
   this.isLoading=true
+  this.cd.detectChanges(); 
   let videoList=await this.getLikedVideos()
   let s = this.formStatistics(videoList)
   let chenels:Array<any>= await this.getChannels(s)
@@ -92,6 +116,10 @@ public async getList(){
   console.log(chenels)
   this.chanels = chenels as Array<Channel>;
   this.isLoading=false
+  this.cd.detectChanges(); 
+}
+public goBack(){
+window.location.reload()
 }
 
   public async getLikedVideos () {

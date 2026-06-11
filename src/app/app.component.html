@@ -7,9 +7,7 @@
   <h1>зачекайте будь ласка Йде обробка данних</h1>
 </div>
 
-<button mat-flat-button color="danger" *ngIf="!isSignedInFlag" style="background-color: red;color: white;" (click)="checkSignInStatus()">Sig in</button>
-<button mat-flat-button color="primary" *ngIf="isSignedInFlag&&chanels.length==0" (click)="getList()">load videos you loked</button>
-<button mat-flat-button color="primary" *ngIf="isSignedInFlag&&chanels.length>0" (click)="goBack()">reload</button>
+<button mat-flat-button color="danger" *ngIf="!isSignedInFlag" style="background-color: red;color: white;" (click)="signIn()">Sign in</button>
 <div>
   <div *ngFor="let chenel of chanels">
 
@@ -23,17 +21,15 @@
         <mat-card-subtitle>
     <div >
       <div style="display: inline-block;">
-        <div style="border-radius: 50%;width: 100px;height: 100px; "  [style.backgroundImage]="'url(' + chenel.picture + ')'"
-        [style.backgroundSize]="'cover'"
-        [style.backgroundPosition]="'center'"></div>
+        <img [src]="chenel.channelAvatarUrl" referrerpolicy="no-referrer" alt=""
+        style="border-radius: 50%;width: 100px;height: 100px;object-fit: cover;display: block;" />
       </div>
       <div style="display: inline-block;vertical-align: top;margin-left: 25px;">
-        <a [href]="chenel.url" style="font-size: 25px;line-height: 60px;">{{chenel.chanal}} - {{chenel.count}}</a>
-        <p>{{chenel.subscribers}} -підписників</p>
+        <a [href]="'https://www.youtube.com/channel/' + chenel.channelId" style="font-size: 25px;line-height: 60px;">{{chenel.channelName}} - {{chenel.percent}}%</a>
       </div>
     </div>
-    <div style="width: 100%;">{{chenel.description}}</div>
-    <mat-progress-bar mode="determinate" [value]="chenel.persent"></mat-progress-bar>
+    <div style="width: 100%;">{{chenel.channelDescription}}</div>
+    <mat-progress-bar mode="determinate" [value]="chenel.percent"></mat-progress-bar>
     <mat-expansion-panel (opened)="change()" (closed)="change()">
       <mat-expansion-panel-header>
         <mat-panel-title> Список відео </mat-panel-title>
@@ -41,7 +37,7 @@
       </mat-expansion-panel-header>
       <div style="margin-left: 25px;">
         <p *ngFor="let video of chenel.videos">
-          <a [href]="'https://www.youtube.com/watch?v='+video.id">{{video.title}}</a>
+          <a [href]="video.url">{{video.name}}</a>
         </p>
       </div>
     </mat-expansion-panel>

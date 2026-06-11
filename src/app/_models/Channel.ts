@@ -1,16 +1,12 @@
 export class Channel{
+    channelName:string=""
     channelId:string=""
-    chanal:string=""
-    count:number=0
-    description:string=""
-    persent:number=0
-    picture:string=""
-    subscribers:string=""
-    url:string=""
+    channelDescription:string=""
+    channelAvatarUrl:string=""
+    percent:number=0
     videos:Array<Video>=[]
-    opened:boolean=false
 }
 export class Video{
-    id:string=""
-    title:string=""
+    name:string=""
+    url:string=""
 }

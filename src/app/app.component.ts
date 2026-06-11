@@ -1,127 +1,101 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, NgZone, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-// import { loadGapiInsideDOM, gapi } from 'gapi-script';
 import { Channel } from './_models/Channel';
-import { VideooList } from './_models/VideoList';
 import {MatButtonModule} from '@angular/material/button';
 import {MatExpansionModule} from '@angular/material/expansion';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatCardModule} from '@angular/material/card';
-import { GoogleService } from './google.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../environments/environment';
+
+declare const google: any;
+
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet,CommonModule,MatButtonModule,MatExpansionModule,MatProgressBarModule,MatCardModule ],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.scss',
-  providers:[GoogleService]
+  styleUrl: './app.component.scss'
 })
-export class AppComponent implements OnInit  {
-  title = 'YoutubeStat';
-  isSignedInFlag:boolean=false
-public chanels:Array<Channel>=[]
-constructor(private cd: ChangeDetectorRef,private ngZone: NgZone,private _googleService:GoogleService){}
-  public isLoading:boolean=false
-  async ngOnInit() {
-    this.isLoading=true
-    let init=await this._googleService.initializeGoogleApi()
-    if(init){
-      console.log('Google API initialized');
-      this.isSignedInFlag=this._googleService.isSignedIn()
-    }else{
-      console.error('Error initializing Google API');
-    }
-    this.isLoading=false
-    this.cd.detectChanges();
-    this.ngZone.run(() => {
-      this.cd.detectChanges();
-  });
+export class AppComponent implements OnInit {
+  isSignedInFlag: boolean = false;
+  public chanels: Array<Channel> = [];
+  public isLoading: boolean = false;
+
+  private client_id = environment.clientId;
+  private scope = environment.scope;
+  private likedEndpoint = environment.likedEndpoint;
+  private tokenClient: any;
+  private token: string | null = null;
+
+  constructor(private cd: ChangeDetectorRef, private ngZone: NgZone, private http: HttpClient) {}
+
+  ngOnInit(): void {
+    this.initTokenClient();
   }
-  public change(){
+
+  // Потрібно для перемальовки при розгортанні/згортанні списку відео
+  public change(): void {
     this.cd.detectChanges();
   }
 
-  public async checkSignInStatus(){
-    let signedIn= await this._googleService.checkSignInStatus()
-    if(signedIn){
-      console.log('User is signed in!!!');
-      this.isSignedInFlag=this._googleService.isSignedIn()
-      this.cd.detectChanges();
-    }else{
-      console.log('User is not signed in!!!');
-      this.isSignedInFlag=false
+  // 1. Ініціалізація GIS token client (бібліотека accounts.google.com/gsi/client)
+  private initTokenClient(): void {
+    if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+      // Скрипт GIS ще не завантажився — пробуємо трохи пізніше
+      setTimeout(() => this.initTokenClient(), 200);
+      return;
     }
+    this.tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: this.client_id,
+      scope: this.scope,
+      callback: (tokenResponse: any) => {
+        this.ngZone.run(() => {
+          if (tokenResponse && tokenResponse.access_token) {
+            this.token = tokenResponse.access_token;
+            this.isSignedInFlag = true;
+            console.log('Access token received via GIS');
+            this.loadChannels();
+          } else {
+            console.error('No access token received', tokenResponse);
+          }
+          this.cd.detectChanges();
+        });
+      }
+    });
+    console.log('GIS token client initialized');
   }
 
-
-public async getList(){
-  this.isLoading=true
-  this.cd.detectChanges();
-  let videoList=await this._googleService.getLikedVideos()
-  let s = this.formStatistics(videoList)
-  let chenels:Array<any>= await this.getChannels(s)
-  chenels.forEach(element => element.persent = element.count * 100 / videoList.length);
-  console.log(chenels)
-  this.chanels = chenels as Array<Channel>;
-  this.isLoading=false
-  this.cd.detectChanges();
-}
-public goBack(){
-window.location.reload()
-}
-
-  public async getChannels (items:Array<any>) {
-    for (let i = 0; i < items.length; i += 50) {
-      let t = "";
-      for (let j = i; j < i + 50; j++) {
-        if (j != i) { t += "," }
-        if (j < items.length) {
-          t += items[j].channelId;
-        }
-      }
-      let c:Array<any> = await this._googleService.chanalInfo(t);
-      c.map(el => {
-        items.forEach(item => {
-          if (item.channelId == el.id) {
-            item.description = el.snippet.description
-            item.subscribers = el.statistics.subscriberCount
-            item.picture = el.snippet.thumbnails.default.url
-            item.url = `https://www.youtube.com/channel/${item.channelId}`
-          }
-        })
-      })
+  // Кнопка авторизації: GIS відкриває згоду і повертає access_token у callback вище
+  public signIn(): void {
+    if (!this.tokenClient) {
+      console.error('GIS token client not initialized yet');
+      this.initTokenClient();
+      return;
     }
-    return items;
+    this.tokenClient.requestAccessToken({ prompt: 'consent' });
   }
 
-
-  /////////////////////////////////////////////////PRIVATE
-  private formStatistics(items:Array<any>) {
-    let statistics_list:Array<any> = []
-    items.map(el => {
-      if (statistics_list.some(ii => ii.channelId === el.snippet.channelId)) {
-        statistics_list.map(it => {
-          if (it.channelId === el.snippet.channelId) {
-            it.count++
-            it.videos.push({ id: el.id, title: el.snippet.title })
-          }
-        })
+  // 2. Запит статистики каналів на API-сервер за отриманим токеном
+  private loadChannels(): void {
+    if (!this.token) {
+      console.error('No access token available to send');
+      return;
+    }
+    this.isLoading = true;
+    this.cd.detectChanges();
+    this.http.post<Array<Channel>>(this.likedEndpoint, { token: this.token }).subscribe({
+      next: (response) => {
+        this.chanels = response ?? [];
+        this.isLoading = false;
+        this.cd.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error loading channels', error);
+        this.isLoading = false;
+        this.cd.detectChanges();
       }
-      else {
-        let statisticElement = this.push(el)
-        statistics_list.push(statisticElement)
-      }
-    })
-    statistics_list.sort((a, b) => a.count < b.count ? 1 : -1)
-    return statistics_list
+    });
   }
-
-
-
-
-  private push(item:any) {
-    return { chanal: item.snippet.channelTitle, channelId: item.snippet.channelId, videos: [{ id: item.id, title: item.snippet.title }], count: 1 }
-  }
-
 }

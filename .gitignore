@@ -40,3 +40,6 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Secrets (real values live here, never commit)
+/src/environments/secret.ts

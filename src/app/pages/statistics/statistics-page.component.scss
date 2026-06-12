@@ -1,0 +1,28 @@
+.statistics__waiting {
+  position: absolute;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 24px;
+  background-color: #fff;
+  text-align: center;
+
+  mat-progress-bar {
+    max-width: 360px;
+  }
+}
+
+.statistics__error {
+  margin: 24px;
+  color: #d93025;
+  font-size: 14px;
+}
+
+.statistics__empty {
+  margin: 24px;
+  color: #5f6368;
+}

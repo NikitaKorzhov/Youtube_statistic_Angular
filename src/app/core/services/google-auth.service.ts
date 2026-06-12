@@ -40,6 +40,7 @@ export class GoogleAuthService {
   private readonly scope = environment.scope;
   private tokenClient: GoogleTokenClient | null = null;
   private initAttempts = 0;
+  private currentToken: string | null = null;
 
   private readonly accessTokenSubject = new Subject<string>();
   private readonly authErrorSubject = new Subject<string>();
@@ -50,6 +51,16 @@ export class GoogleAuthService {
   readonly authError$: Observable<string> = this.authErrorSubject.asObservable();
 
   constructor(private ngZone: NgZone) {}
+
+  /** The access token from the current session, or null if the user is not signed in. */
+  get token(): string | null {
+    return this.currentToken;
+  }
+
+  /** Whether the user currently has a valid in-memory access token. */
+  isAuthenticated(): boolean {
+    return this.currentToken !== null;
+  }
 
   /** Prepares the GIS token client; retries until the GIS script has loaded. */
   initialize(): void {
@@ -89,6 +100,7 @@ export class GoogleAuthService {
   /** Routes a GIS callback to the success or error stream. */
   private handleTokenResponse(response: GoogleTokenResponse): void {
     if (response && response.access_token) {
+      this.currentToken = response.access_token;
       this.accessTokenSubject.next(response.access_token);
       return;
     }

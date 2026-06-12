@@ -1,0 +1,36 @@
+.channel-card {
+  margin: 20px;
+  padding: 20px;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+  }
+
+  &__avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+  }
+
+  &__name {
+    font-size: 25px;
+    line-height: 60px;
+  }
+
+  &__description {
+    width: 100%;
+    margin: 12px 0;
+  }
+
+  &__videos {
+    margin-left: 25px;
+  }
+}
+
+::ng-deep .mat-mdc-card-header-text {
+  width: 100% !important;
+}

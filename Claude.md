@@ -5,6 +5,7 @@
 - After making changes, ask the user if that is all. 
   - If **yes**: commit, push, and create a new pull request.
   - If **no**: wait for a new prompt and continue making changes on the current branch.
+- After the pull request is created, switch back to the main branch (`master`).
 
 ### Language & Communication Constraint
 - **Strictly Language Rule:** Regardless of the language used in the prompt or conversation, all generated content—including code, comments, commit messages, PR descriptions, and branch names—**must be written entirely in English**.

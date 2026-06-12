@@ -1,5 +1,5 @@
 ### Workflow for Each New Feature
-- Create a new branch for the feature from `main`.
+- Create a new branch for the feature from `master` (the repository's main branch).
 - Switch to this feature branch.
 - Make the required changes.
 - After making changes, ask the user if that is all. 

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, OnInit } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { RouterOutlet } from '@angular/router';
 import { Channel } from './_models/Channel';
 import {MatButtonModule} from '@angular/material/button';
@@ -17,19 +18,20 @@ import { YoutubeStatsService } from './core/services/youtube-stats.service';
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   isSignedInFlag: boolean = false;
   public chanels: Array<Channel> = [];
   public isLoading: boolean = false;
 
+  private readonly $destroy = new Subject<void>();
+
   constructor(
     private authService: GoogleAuthService,
-    private statsService: YoutubeStatsService,
-    private destroyRef: DestroyRef
+    private statsService: YoutubeStatsService
   ) {
     // When the user authorizes, fetch their liked-channel statistics.
     this.authService.accessToken$
-      .pipe(takeUntilDestroyed())
+      .pipe(takeUntil(this.$destroy))
       .subscribe((token: string) => {
         this.isSignedInFlag = true;
         this.loadChannels(token);
@@ -38,6 +40,11 @@ export class AppComponent implements OnInit {
 
   ngOnInit(): void {
     this.authService.initialize();
+  }
+
+  ngOnDestroy(): void {
+    this.$destroy.next();
+    this.$destroy.complete();
   }
 
   // Кнопка авторизації: відкриває згоду Google і повертає access_token через сервіс
@@ -49,7 +56,7 @@ export class AppComponent implements OnInit {
   private loadChannels(token: string): void {
     this.isLoading = true;
     this.statsService.getLikedChannels(token)
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(takeUntil(this.$destroy))
       .subscribe({
         next: (response: Channel[]) => {
           this.chanels = response ?? [];

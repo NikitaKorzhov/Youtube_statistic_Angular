@@ -32,13 +32,22 @@ declare const google: {
  */
 @Injectable({ providedIn: 'root' })
 export class GoogleAuthService {
+  /** Maximum number of times we poll for the GIS script before giving up (~5s at 200ms). */
+  private static readonly MAX_INIT_ATTEMPTS = 25;
+  private static readonly INIT_RETRY_MS = 200;
+
   private readonly clientId = environment.clientId;
   private readonly scope = environment.scope;
   private tokenClient: GoogleTokenClient | null = null;
+  private initAttempts = 0;
+
   private readonly accessTokenSubject = new Subject<string>();
+  private readonly authErrorSubject = new Subject<string>();
 
   /** Emits an access token each time the user successfully authorizes. */
   readonly accessToken$: Observable<string> = this.accessTokenSubject.asObservable();
+  /** Emits a human-readable message whenever authorization fails. */
+  readonly authError$: Observable<string> = this.authErrorSubject.asObservable();
 
   constructor(private ngZone: NgZone) {}
 
@@ -47,21 +56,20 @@ export class GoogleAuthService {
     if (this.tokenClient) {
       return;
     }
-    if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
-      setTimeout(() => this.initialize(), 200);
+    if (!this.isGisAvailable()) {
+      if (++this.initAttempts >= GoogleAuthService.MAX_INIT_ATTEMPTS) {
+        this.fail('Google Identity Services failed to load. Check your network and try again.');
+        return;
+      }
+      setTimeout(() => this.initialize(), GoogleAuthService.INIT_RETRY_MS);
       return;
     }
+    this.initAttempts = 0;
     this.tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: this.clientId,
       scope: this.scope,
       callback: (response: GoogleTokenResponse) =>
-        this.ngZone.run(() => {
-          if (response && response.access_token) {
-            this.accessTokenSubject.next(response.access_token);
-          } else {
-            console.error('No access token received', response);
-          }
-        }),
+        this.ngZone.run(() => this.handleTokenResponse(response)),
     });
   }
 
@@ -69,10 +77,35 @@ export class GoogleAuthService {
   requestAccessToken(): void {
     if (!this.tokenClient) {
       this.initialize();
-      // The GIS script may still be loading — retry shortly.
-      setTimeout(() => this.requestAccessToken(), 200);
-      return;
+      // The GIS script may still be loading — retry shortly if init succeeded.
+      if (!this.tokenClient) {
+        setTimeout(() => this.requestAccessToken(), GoogleAuthService.INIT_RETRY_MS);
+        return;
+      }
     }
     this.tokenClient.requestAccessToken({ prompt: 'consent' });
+  }
+
+  /** Routes a GIS callback to the success or error stream. */
+  private handleTokenResponse(response: GoogleTokenResponse): void {
+    if (response && response.access_token) {
+      this.accessTokenSubject.next(response.access_token);
+      return;
+    }
+    this.fail(
+      response && response.error
+        ? `Authorization failed: ${response.error}`
+        : 'Authorization failed: no access token was returned.'
+    );
+  }
+
+  /** Logs and emits an authorization error. */
+  private fail(message: string): void {
+    console.error(message);
+    this.authErrorSubject.next(message);
+  }
+
+  private isGisAvailable(): boolean {
+    return typeof google !== 'undefined' && !!google.accounts && !!google.accounts.oauth2;
   }
 }

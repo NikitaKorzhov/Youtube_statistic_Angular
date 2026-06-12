@@ -28,6 +28,7 @@
   - Avoid nested `.subscribe()` calls — use mapping operators (`switchMap`, `mergeMap`, `concatMap`) instead.
   - **Component subscriptions must be torn down in the destructor:** whenever a component's TypeScript calls `.subscribe()`, the stream must be piped through `takeUntil(this.$destroy)`, where `$destroy` is a `private readonly $destroy = new Subject<void>()`. The component implements `OnDestroy` and, in `ngOnDestroy()`, calls `this.$destroy.next()` followed by `this.$destroy.complete()`.
 - **Single Responsibility Principle (SRP):** Keep components small and focused on rendering or orchestration. If a component grows over 200–300 lines, suggest refactoring it into smaller dumb components.
+- **Tests are mandatory:** Every new component, directive, or service must ship with its own unit-test spec (`*.spec.ts`) in the same folder. Tests must cover both the happy path and error handling (failed HTTP requests, invalid input, rejected/empty authorization, etc.). A feature is not considered complete until its tests exist and pass.
 
 ---
 

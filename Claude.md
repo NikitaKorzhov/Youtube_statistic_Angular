@@ -26,6 +26,7 @@
   - Components must never directly access the `HttpClient` or handle raw HTTP responses (always use API/Data services).
 - **RxJS Best Practices:** - Always handle subscription cleanups (use `takeUntilDestroyed` or the `async` pipe in templates).
   - Avoid nested `.subscribe()` calls — use mapping operators (`switchMap`, `mergeMap`, `concatMap`) instead.
+  - **Component subscriptions must be torn down in the destructor:** whenever a component's TypeScript calls `.subscribe()`, the stream must be piped through `takeUntil(this.$destroy)`, where `$destroy` is a `private readonly $destroy = new Subject<void>()`. The component implements `OnDestroy` and, in `ngOnDestroy()`, calls `this.$destroy.next()` followed by `this.$destroy.complete()`.
 - **Single Responsibility Principle (SRP):** Keep components small and focused on rendering or orchestration. If a component grows over 200–300 lines, suggest refactoring it into smaller dumb components.
 
 ---

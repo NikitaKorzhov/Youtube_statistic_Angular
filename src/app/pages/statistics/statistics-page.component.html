@@ -1,0 +1,19 @@
+<ng-container *ngIf="vm$ | async as vm">
+  <div class="statistics__waiting" *ngIf="vm.loading">
+    <h1>Please wait, loading your statistics…</h1>
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  </div>
+
+  <ng-container *ngIf="!vm.loading">
+    <p class="statistics__error" *ngIf="vm.error">{{ vm.error }}</p>
+
+    <app-channel-card
+      *ngFor="let channel of vm.channels"
+      [channel]="channel"
+    ></app-channel-card>
+
+    <p class="statistics__empty" *ngIf="!vm.error && vm.channels.length === 0">
+      No channels to show yet.
+    </p>
+  </ng-container>
+</ng-container>

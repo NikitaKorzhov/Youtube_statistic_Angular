@@ -59,6 +59,25 @@ describe('GoogleAuthService', () => {
     capturedConfig!.callback({ access_token: 'ya29.token' });
   });
 
+  it('should expose the token and report authentication after a successful callback', () => {
+    expect(service.isAuthenticated()).toBeFalse();
+    expect(service.token).toBeNull();
+
+    service.initialize();
+    capturedConfig!.callback({ access_token: 'ya29.token' });
+
+    expect(service.isAuthenticated()).toBeTrue();
+    expect(service.token).toBe('ya29.token');
+  });
+
+  it('should stay unauthenticated when the callback returns no token', () => {
+    service.initialize();
+    capturedConfig!.callback({ error: 'access_denied' });
+
+    expect(service.isAuthenticated()).toBeFalse();
+    expect(service.token).toBeNull();
+  });
+
   it('should emit an auth error when the callback returns an error', (done) => {
     service.initialize();
     service.authError$.subscribe((message) => {

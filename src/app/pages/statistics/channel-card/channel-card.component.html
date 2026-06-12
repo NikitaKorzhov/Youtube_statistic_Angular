@@ -1,0 +1,38 @@
+<mat-card appearance="outlined" class="channel-card">
+  <mat-card-header>
+    <mat-card-subtitle>
+      <div class="channel-card__head">
+        <img
+          class="channel-card__avatar"
+          [src]="channel.channelAvatarUrl"
+          referrerpolicy="no-referrer"
+          alt=""
+        />
+        <div class="channel-card__heading">
+          <a
+            class="channel-card__name"
+            [href]="'https://www.youtube.com/channel/' + channel.channelId"
+            target="_blank"
+            rel="noopener"
+          >
+            {{ channel.channelName }} - {{ channel.percent }}%
+          </a>
+        </div>
+      </div>
+
+      <div class="channel-card__description">{{ channel.channelDescription }}</div>
+      <mat-progress-bar mode="determinate" [value]="channel.percent"></mat-progress-bar>
+
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>Video list</mat-panel-title>
+        </mat-expansion-panel-header>
+        <div class="channel-card__videos">
+          <p *ngFor="let video of channel.videos">
+            <a [href]="video.url" target="_blank" rel="noopener">{{ video.name }}</a>
+          </p>
+        </div>
+      </mat-expansion-panel>
+    </mat-card-subtitle>
+  </mat-card-header>
+</mat-card>

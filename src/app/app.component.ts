@@ -6,8 +6,8 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatExpansionModule} from '@angular/material/expansion';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
 import {MatCardModule} from '@angular/material/card';
-import { HttpClient } from '@angular/common/http';
 import { environment } from '../environments/environment';
+import { YoutubeStatsService } from './core/services/youtube-stats.service';
 
 declare const google: any;
 
@@ -25,11 +25,10 @@ export class AppComponent implements OnInit {
 
   private client_id = environment.clientId;
   private scope = environment.scope;
-  private likedEndpoint = environment.likedEndpoint;
   private tokenClient: any;
   private token: string | null = null;
 
-  constructor(private cd: ChangeDetectorRef, private ngZone: NgZone, private http: HttpClient) {}
+  constructor(private cd: ChangeDetectorRef, private ngZone: NgZone, private statsService: YoutubeStatsService) {}
 
   ngOnInit(): void {
     this.initTokenClient();
@@ -85,13 +84,13 @@ export class AppComponent implements OnInit {
     }
     this.isLoading = true;
     this.cd.detectChanges();
-    this.http.post<Array<Channel>>(this.likedEndpoint, { token: this.token }).subscribe({
-      next: (response) => {
+    this.statsService.getLikedChannels(this.token).subscribe({
+      next: (response: Channel[]) => {
         this.chanels = response ?? [];
         this.isLoading = false;
         this.cd.detectChanges();
       },
-      error: (error) => {
+      error: (error: unknown) => {
         console.error('Error loading channels', error);
         this.isLoading = false;
         this.cd.detectChanges();
